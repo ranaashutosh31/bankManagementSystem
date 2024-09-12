@@ -71,9 +71,8 @@ public class TransactionDAO {
         String insertTransactionQuery = "INSERT INTO Transaction (account_number, transaction_type, amount, transaction_date) VALUES (?, ?, ?, NOW())";
 
         try (Connection con = DBConnection.getConnection()) {
-            con.setAutoCommit(false);  // Start transaction
+            con.setAutoCommit(false);  
 
-            // Step 1: Check if source account has sufficient balance
             double currentBalance = 0;
             try (PreparedStatement checkBalanceStmt = con.prepareStatement(checkBalanceQuery)) {
                 checkBalanceStmt.setInt(1, sourceAccountNumber);
@@ -91,15 +90,13 @@ public class TransactionDAO {
                 con.rollback();
                 return false; // Insufficient funds
             }
-
-            // Step 2: Deduct amount from source account
+		
             try (PreparedStatement deductAmountStmt = con.prepareStatement(deductAmountQuery)) {
                 deductAmountStmt.setDouble(1, amount);
                 deductAmountStmt.setInt(2, sourceAccountNumber);
                 deductAmountStmt.executeUpdate();
             }
 
-            // Step 3: Add amount to destination account
             try (PreparedStatement addAmountStmt = con.prepareStatement(addAmountQuery)) {
                 addAmountStmt.setDouble(1, amount);
                 addAmountStmt.setInt(2, destinationAccountNumber);
@@ -110,7 +107,6 @@ public class TransactionDAO {
                 }
             }
 
-            // Step 4: Record both debit and credit transactions
             try (PreparedStatement insertTransactionStmt = con.prepareStatement(insertTransactionQuery)) {
                 // Record debit for source account
                 insertTransactionStmt.setInt(1, sourceAccountNumber);
